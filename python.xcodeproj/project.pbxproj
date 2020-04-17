@@ -6,12 +6,18 @@
 	objectVersion = 50;
 	objects = {
 
+/* Begin PBXFileReference section */
+		6AF495A82449A41600A9EE3F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
 /* Begin PBXGroup section */
 		6AF4959D24498FC300A9EE3F = {
 			isa = PBXGroup;
 			children = (
+				6AF495A82449A41600A9EE3F /* README.md */,
 			);
 			sourceTree = "<group>";
+			usesTabs = 1;
 		};
 /* End PBXGroup section */
 
