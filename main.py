@@ -3,15 +3,28 @@
 # sompe imports
 import argparse
 import sys
+from datetime import datetime
+import os
+import pandas as pd
 
 # from argparse import RawDescriptionHelpFormatter
 
 
 # my own imports
 import covars as vars
+import coplotter as coplotter
+
+"""
+# mandatory input variables
+plot_type = ""  # mandatory, the plot
+country = ""  # mandatory the country
+"""
 
 
 def argparser(routine):
+    # optional input list variables
+    regs = []  # list of region
+    e_regs = []  # list of excluded regions
     example_text_0 = """For complex strategy: usage example:
 
     python3 {} -p SIR -c US
@@ -27,7 +40,7 @@ def argparser(routine):
     python3 {} -p SIR -c Italy  -ne Lombardia, Veneto""".format(
         routine, routine, routine
     )
-    usage_text = example_text_0 + "\n\n"+example_text_1
+    usage_text = example_text_0 + "\n\n" + example_text_1
     parser = argparse.ArgumentParser(
         prog=routine,
         description="Manage covid data and plot some graphs. The same script can be used to manage global data as well as national (Italian)  and/or regional level. There two one mandatory arguments, plot_type and country. plot_type is one in SIR, SIRS, standard, predicted.\n\tSIR plots SIR graphs;\n\tSIRS plots SIRS graphs;\n\tstandard plots the behaviour of data as thet are collected;\n\tpredicted extracts data at given time points (usually the ones which correspond to lockdown) and plots data as they are frozen between intervals. Usually the time slot is 14 days\nIf country is Italy you can provide the -n optional flag to load national data instead that global one. With Italy you can add the -r optional flag to pass a list of regions and/or the -ne optional parameter to exclude a list of regions from national data.",
@@ -56,6 +69,15 @@ def argparser(routine):
     )
 
     # optional arguments
+    parser.add_argument(
+        "-n",
+        "--national",
+        action="store_true",
+        required=False,
+        dest="national",
+        help='If Italy is provided, you can add this flag to load national data instead global one. Default=False"',
+        default=False,
+    )
     parser.add_argument(
         "-r",
         "--regions",
@@ -89,16 +111,6 @@ def argparser(routine):
     )
 
     parser.add_argument(
-        "-n",
-        "--national",
-        action="store_true",
-        required=False,
-        dest="national",
-        help='If Italy is provided, you can add this flag to load national data instead global one. Default=False"',
-        default=False,
-    )
-
-    parser.add_argument(
         "-i",
         "--inc",
         required=False,
@@ -121,12 +133,152 @@ def argparser(routine):
     )
 
     args = parser.parse_args()
-    return args()
+    # get the values
+
+    plot_type = args.plot_type
+    country = args.country
+    national = args.national
+    if args.regions:
+        regs = [r.strip() for r in args.regions.split(",")]
+    if args.excluded_regions:
+        e_regs = [r.strip() for r in args.excluded_regions.split(",")]
+    inc = args.inc
+    extend_range = args.extend_range
+    verbose = args.verbose
+
+    return plot_type, country, national, regs, e_regs, inc, extend_range, verbose
 
 
+def get_data_according_to_national_flag_and_save_to_files(plotter, national, verbose):
+    routine = "get_data_according_to_national_flag_and_save_to_files"
+    print(f"\tRoutine {routine}")
+    df = pd.DataFrame()
+    if not national:
+        # confirmed
+        url = vars._CONFIRMED_GLOBAL_CSV_
+        f = vars._FLD_IN_ + "/" + vars._CONFIRMED_GLOBAL_FILE_NAME_
+        if verbose:
+            print(
+                f"\t\tRoutine {routine}. Getting CSV data from {url} and saving into {f}"
+            )
+
+        df = plotter.get_original_data(url)
+        df.to_csv(f)
+        
+        # recovered
+        url = vars._RECOVERED_GLOBAL_CSV_
+        f = vars._FLD_IN_ + "/" + vars._RECOVERED_GLOBAL_FILE_NAME_
+        if verbose:
+            print(
+                f"\t\tRoutine {routine}. Getting CSV data from {url} and saving into {f}"
+            )
+
+        df = plotter.get_original_data(url)
+        df.to_csv(f)
+        
+        # death
+        url = vars._DEATH_GLOBAL_CSV_
+        f = vars._FLD_IN_ + "/" + vars._DEATH_GLOBAL_FILE_NAME_
+        if verbose:
+            print(
+                f"\t\tRoutine {routine}. Getting CSV data from {url} and saving into {f}"
+            )
+
+        df = plotter.get_original_data(url)
+        df.to_csv(f)
+    else: # -n is provided
+        url = vars._DATA_ITA_
+        f = vars._FLD_IN_ + "/" + vars._NAZ_CSV_FILE_NAME_
+        if verbose:
+            print(
+                f"\t\tRoutine {routine}. Getting CSV data from {url} and saving into {f}"
+            )
+
+        df = plotter.get_original_data(url)
+        df.to_csv(f)
+        regs=plotter.adds['regs']
+        e_regs=plotter.adds['e_regs']
+        if (len(regs)>0):
+            # extract data for regions
+            # extract aggregate for all regions in regs
+            print(regs)
+        if (len(e_regs)>0):
+            #extract national data w/o e_regs
+            print(e_regs)
 def main():
+
     routine = sys.argv[0]
-    argparser(routine)
+    (
+        plot_type,
+        country,
+        national,
+        regs,
+        e_regs,
+        inc,
+        extend_range,
+        verbose,
+    ) = argparser(routine)
+
+    # adds dictionary for other parameters
+    adds = {}
+
+    # if country is NOT Italy, then national is False
+    if country != "Italy":
+        national = False
+    # reset regs and e_regs if national is False
+    if not national:
+        regs = []
+        e_regs = []
+    else:
+        adds["national"] = national
+        adds["regs"] = regs
+        adds["e_regs"] = e_regs
+    print("Print parameters")
+    print("\tMandatory arguments:")
+    print(f"\t\tplot-types {plot_type}")
+    print(f"\t\tcountry {country}")
+    print("\n\toptional arguments:")
+    print(f"\t\tnational {national}")
+    print(f"\t\tregions {regs}")
+    print(f"\t\texcluded regions {e_regs}")
+    print(f"\t\tincrement {inc}")
+    print(f"\t\textended range {extend_range}")
+    print(f"\t\tverbose {verbose}")
+
+    start_date = datetime.now()
+
+    date_ts = start_date.strftime("%d-%b-%Y (%H:%M:%S.%f)")
+    print(f"Starting {routine} at {date_ts}")
+    if verbose:
+        print(f"\tRoutine {routine}. Create folders")
+    # create folders
+    if not os.path.exists(vars._FLD_IN_):
+        os.makedirs(vars._FLD_IN_)
+
+    if not os.path.exists(vars._FLD_OUT_):
+        os.makedirs(vars._FLD_OUT_)
+
+    if not os.path.exists(vars._FLD_FIG_):
+        os.makedirs(vars._FLD_FIG_)
+
+    # step 1 initialize class plotter
+    mydate = datetime.now()
+    date_ts = mydate.strftime("%d-%b-%Y (%H:%M:%S.%f)")
+    print(f"Routine {routine}. Creating folders at {date_ts}")
+
+    if not national:
+        plotter = coplotter.Plotter(plot_type, country, inc, extend_range, verbose)
+
+    else:
+        plotter = coplotter.Plotter(
+            plot_type, country, inc, extend_range, verbose, **adds
+        )
+
+    # step 2 get the data
+    mydate = datetime.now()
+    date_ts = mydate.strftime("%d-%b-%Y (%H:%M:%S.%f)")
+    print(f"Routine {routine}. Getting data  at {date_ts}")
+    get_data_according_to_national_flag_and_save_to_files(plotter, national, verbose)
 
 
 main()
