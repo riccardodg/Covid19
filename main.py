@@ -164,7 +164,7 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
 
         df = plotter.get_original_data(url)
         df.to_csv(f)
-        
+
         # recovered
         url = vars._RECOVERED_GLOBAL_CSV_
         f = vars._FLD_IN_ + "/" + vars._RECOVERED_GLOBAL_FILE_NAME_
@@ -175,7 +175,7 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
 
         df = plotter.get_original_data(url)
         df.to_csv(f)
-        
+
         # death
         url = vars._DEATH_GLOBAL_CSV_
         f = vars._FLD_IN_ + "/" + vars._DEATH_GLOBAL_FILE_NAME_
@@ -186,7 +186,7 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
 
         df = plotter.get_original_data(url)
         df.to_csv(f)
-    else: # -n is provided
+    else:  # -n is provided
         url = vars._DATA_ITA_
         f = vars._FLD_IN_ + "/" + vars._NAZ_CSV_FILE_NAME_
         if verbose:
@@ -196,15 +196,40 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
 
         df = plotter.get_original_data(url)
         df.to_csv(f)
-        regs=plotter.adds['regs']
-        e_regs=plotter.adds['e_regs']
-        if (len(regs)>0):
-            # extract data for regions
+        regs = plotter.adds["regs"]
+        e_regs = plotter.adds["e_regs"]
+        if len(regs) > 0:
+            url = vars._DATA_REG_
+            f = vars._FLD_IN_ + "/" + vars._REG_CSV_FILE_NAME_
+            if verbose:
+                print(
+                    f"\t\tRoutine {routine}. Getting CSV data from {url} and saving into {f}"
+                )
+
+            df = plotter.get_original_data(url)
+            df.to_csv(f)
+            for r in regs:
+                # extract data for regions
+                f = (
+                    vars._FLD_IN_
+                    + "/"
+                    + vars._REG_CSV_FILE_NAME_BASE_
+                    + r
+                    + vars._REG_CSV_FILE_NAME_BASE_SUFFIX_
+                )
+                if verbose:
+                    print(
+                        f"\t\tRoutine {routine}. Getting CSV data for {r} from {url} and saving into {f}"
+                    )
+                df = plotter.get_original_data_for_region(df, r)
+                df.to_csv(f)
             # extract aggregate for all regions in regs
             print(regs)
-        if (len(e_regs)>0):
-            #extract national data w/o e_regs
+        if len(e_regs) > 0:
+            # extract national data w/o e_regs
             print(e_regs)
+
+
 def main():
 
     routine = sys.argv[0]

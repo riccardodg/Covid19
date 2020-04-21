@@ -44,7 +44,9 @@ _NAZ_CSV_FILE_NAME_ = (
     "dpc-covid19-ita-andamento-nazionale_" + the_date + ".csv"
 )  # file for italy
 
-_REG_CSV_FILE_NAME_AGGR_ = "dpc-covid19-ita-regioni_aggregates_" + the_date + ".csv"  # file for regions, aggregating
+_REG_CSV_FILE_NAME_AGGR_ = (
+    "dpc-covid19-ita-regioni_aggregates_" + the_date + ".csv"
+)  # file for regions, aggregating
 _NAZ_CSV_FILE_NAME_AGGR_ = (
     "dpc-covid19-ita-andamento-nazionale_" + the_date + ".csv"
 )  # file for italy w/o excluded regions
@@ -57,6 +59,11 @@ _REG_CSV_FILE_ADD_NAME_BASE_ = (
 )
 _REG_CSV_FILE_ADD_NAME_INC_SUFFIX_ = (
     "_" + the_date + "_incp.csv"
+)  # suffix for regional incremented data
+
+_REG_CSV_FILE_NAME_BASE_ = "dpc-covid19-ita-"  # prefix for regional imcremented data
+_REG_CSV_FILE_NAME_BASE_SUFFIX_ = (
+    "_" + the_date + ".csv"
 )  # suffix for regional incremented data
 
 # additional files

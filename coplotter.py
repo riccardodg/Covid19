@@ -54,3 +54,16 @@ class Plotter(object):
             )
         df = pd.read_csv(url)
         return df
+    
+    
+    def get_original_data_for_region(self,df,r):
+        routine = classname + ": " + "get_original_data_for_region"
+        if self.verbose:
+            print(
+                f"\t\tRoutine {routine}. Getting CSV data for {r} from {df}"
+            )
+        df = pd.read_csv(url)
+        df_r=df.loc[df['denominazione_regione'].str.lower()=='toscana']
+        #df_r=df.loc[df['denominazione_regione'].str.lower() == r]
+        print(df_r)
+        return df_r
