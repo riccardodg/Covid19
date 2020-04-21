@@ -139,9 +139,9 @@ def argparser(routine):
     country = args.country
     national = args.national
     if args.regions:
-        regs = [r.strip() for r in args.regions.split(",")]
+        regs = [r.strip().lower() for r in args.regions.split(",")]
     if args.excluded_regions:
-        e_regs = [r.strip() for r in args.excluded_regions.split(",")]
+        e_regs = [r.strip().lower() for r in args.excluded_regions.split(",")]
     inc = args.inc
     extend_range = args.extend_range
     verbose = args.verbose
