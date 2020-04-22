@@ -20,6 +20,10 @@ plot_type = ""  # mandatory, the plot
 country = ""  # mandatory the country
 """
 
+"""
+Parse the input parameters.
+"""
+
 
 def argparser(routine):
     # optional input list variables
@@ -149,10 +153,23 @@ def argparser(routine):
     return plot_type, country, national, regs, e_regs, inc, extend_range, verbose
 
 
+"""
+Get data from URLs. It acts according to the national flag. If -n is provided, national data
+are collected. If -r and -ne are also provided, then extract regional data, aggregates and excluded data
+
+Parameters:
+plotter the class
+national either True or False
+verbose True to print more information
+"""
+
+
 def get_data_according_to_national_flag_and_save_to_files(plotter, national, verbose):
     routine = "get_data_according_to_national_flag_and_save_to_files"
     print(f"\tRoutine {routine}")
     df = pd.DataFrame()
+    myreg = ""
+    myereg = ""
     if not national:
         # confirmed
         url = vars._CONFIRMED_GLOBAL_CSV_
@@ -188,6 +205,7 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
         df.to_csv(f)
     else:  # -n is provided
         url = vars._DATA_ITA_
+
         f = vars._FLD_IN_ + "/" + vars._NAZ_CSV_FILE_NAME_
         if verbose:
             print(
@@ -199,6 +217,11 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
         regs = plotter.adds["regs"]
         e_regs = plotter.adds["e_regs"]
         if len(regs) > 0:
+            if (len(regs)) == 1:
+                myreg = "-reg"
+            else:
+                myreg = "-regs"
+
             url = vars._DATA_REG_
             f = vars._FLD_IN_ + "/" + vars._REG_CSV_FILE_NAME_
             if verbose:
@@ -221,13 +244,45 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
                     print(
                         f"\t\tRoutine {routine}. Getting CSV data for {r} from {url} and saving into {f}"
                     )
-                df = plotter.get_original_data_for_region(df, r)
+                df = plotter.get_original_data_for_region(url, r)
                 df.to_csv(f)
             # extract aggregate for all regions in regs
-            print(regs)
+
+            f = (
+                vars._FLD_IN_
+                + "/"
+                + vars._REG_CSV_FILE_NAME_AGGR_
+                + str(len(regs))
+                + myreg
+                + vars._REG_CSV_FILE_NAME_AGGR_SUFFIX_
+            )
+            if verbose:
+                print(
+                    f"\t\tRoutine {routine}. Getting CSV data for {regs} from {url} and saving into {f}"
+                )
+            df = plotter.get_original_data_for_regional_aggregate(url, regs)
+            df.to_csv(f)
         if len(e_regs) > 0:
+            if (len(e_regs)) == 1:
+                myereg = "-reg"
+            else:
+                myereg = "-regs"
             # extract national data w/o e_regs
-            print(e_regs)
+            url = vars._DATA_REG_
+            f = (
+                vars._FLD_IN_
+                + "/"
+                + vars._NAZ_CSV_FILE_NAME_EXCL_
+                + str(len(e_regs))
+                + myereg
+                + vars._NAZ_CSV_FILE_NAME_EXCL_SUFFIX_
+            )
+            if verbose:
+                print(
+                    f"\t\tRoutine {routine}. Getting CSV data for {e_regs} from {url} and saving into {f}"
+                )
+            df = plotter.get_original_data_for_national_excluded(url, e_regs)
+            df.to_csv(f)
 
 
 def main():

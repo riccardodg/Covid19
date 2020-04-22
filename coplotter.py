@@ -1,4 +1,5 @@
 import pandas as pd
+import datetime
 
 classname = "Plotter"
 """
@@ -49,21 +50,98 @@ class Plotter(object):
     def get_original_data(self, url):
         routine = classname + ": " + "get_original_data"
         if self.verbose:
-            print(
-                f"\t\tRoutine {routine}. Getting CSV data from {url}"
-            )
+            print(f"\t\tRoutine {routine}. Getting CSV data from {url}")
         df = pd.read_csv(url)
+        df["data"] = df.data.apply(
+            lambda x: datetime.datetime.strptime(x[0:10], "%Y-%m-%d").strftime(
+                "%m/%d/%Y"
+            )
+        )
         return df
+
+    """
+    get data from regional url
     
-    
-    def get_original_data_for_region(self,df,r):
+    parameters
+    url the regional url
+    r the region
+    return the dataframe with the data for region r
+    """
+
+    def get_original_data_for_region(self, url, r):
         routine = classname + ": " + "get_original_data_for_region"
         if self.verbose:
-            print(
-                f"\t\tRoutine {routine}. Getting CSV data for {r}"
+            print(f"\t\tRoutine {routine}. Getting CSV data for {r} from {url}")
+        df = pd.read_csv(url)
+        df["data"] = df.data.apply(
+            lambda x: datetime.datetime.strptime(x[0:10], "%Y-%m-%d").strftime(
+                "%m/%d/%Y"
             )
-        #df = pd.read_csv(url)
-        df_r=df.loc[df['denominazione_regione'].str.lower()==r]
-        #df_r=df.loc[df['denominazione_regione'].str.lower() == r]
-        
+        )
+
+        df_r = df.loc[df["denominazione_regione"].str.lower() == r]
+        # df_r=df.loc[df['denominazione_regione'].str.lower() == r]
+
+        return df_r
+
+    """
+    get data from regional url
+    
+    parameters
+    url the regional url
+    regs list of regions
+    return the dataframe with the aggregate data for regions in regs
+    
+    """
+
+    def get_original_data_for_regional_aggregate(self, url, regs):
+        routine = classname + ": " + "get_original_data_for_regional_aggregate"
+        if self.verbose:
+            print(
+                f"\t\tRoutine {routine}. Getting CSV data for aggregating {regs} from {url}"
+            )
+        df = pd.read_csv(url)
+        df["data"] = df.data.apply(
+            lambda x: datetime.datetime.strptime(x[0:10], "%Y-%m-%d").strftime(
+                "%m/%d/%Y"
+            )
+        )
+        df_r = (
+            df.loc[df["denominazione_regione"].str.lower().isin(regs)]
+            .groupby(["data"])
+            .sum()
+        )
+        # df_r=df.loc[df['denominazione_regione'].str.lower() == r]
+
+        return df_r
+
+    """
+       get data from regional url
+       
+       parameters
+       url the regional url
+       regs list of regions to exclude
+       return the dataframe with the aggregate data for regions which are not in regs
+       
+       """
+
+    def get_original_data_for_national_excluded(self, url, regs):
+        routine = classname + ": " + "get_original_data_for_national_excluded"
+        if self.verbose:
+            print(
+                f"\t\tRoutine {routine}. Getting CSV data for excluding {regs} from {url}"
+            )
+        df = pd.read_csv(url)
+        df["data"] = df.data.apply(
+            lambda x: datetime.datetime.strptime(x[0:10], "%Y-%m-%d").strftime(
+                "%m/%d/%Y"
+            )
+        )
+        df_r = (
+            df.loc[~df["denominazione_regione"].str.lower().isin(regs)]
+            .groupby(["data"])
+            .sum()
+        )
+        # df_r=df.loc[df['denominazione_regione'].str.lower() == r]
+
         return df_r
