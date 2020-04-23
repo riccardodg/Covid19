@@ -13,6 +13,7 @@ import pandas as pd
 # my own imports
 import covars as vars
 import coplotter as coplotter
+import codataframes as codf
 
 """
 # mandatory input variables
@@ -158,29 +159,35 @@ Get data from URLs. It acts according to the national flag. If -n is provided, n
 are collected. If -r and -ne are also provided, then extract regional data, aggregates and excluded data
 
 Parameters:
-plotter the class
+codata the class
 national either True or False
 verbose True to print more information
 """
 
 
-def get_data_according_to_national_flag_and_save_to_files(plotter, national, verbose):
+def get_data_according_to_national_flag_and_save_to_files(
+    codata, national, country, verbose
+):
     routine = "get_data_according_to_national_flag_and_save_to_files"
     print(f"\tRoutine {routine}")
     df = pd.DataFrame()
     myreg = ""
     myereg = ""
+    dict = {}
+    files = []
     if not national:
+        dict["national"] = national
         # confirmed
         url = vars._CONFIRMED_GLOBAL_CSV_
         f = vars._FLD_IN_ + "/" + vars._CONFIRMED_GLOBAL_FILE_NAME_
         if verbose:
             print(
-                f"\t\tRoutine {routine}. Getting CSV data from {url} and saving into {f}"
+                f"\t\tRoutine {routine}. Getting CSV data from {url} and saving into {f}. Country is {country}"
             )
 
-        df = plotter.get_original_data(url)
+        df = codata.get_original_data(url)
         df.to_csv(f)
+        files.append(f)
 
         # recovered
         url = vars._RECOVERED_GLOBAL_CSV_
@@ -190,8 +197,9 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
                 f"\t\tRoutine {routine}. Getting CSV data from {url} and saving into {f}"
             )
 
-        df = plotter.get_original_data(url)
+        df = codata.get_original_data(url)
         df.to_csv(f)
+        files.append(f)
 
         # death
         url = vars._DEATH_GLOBAL_CSV_
@@ -201,9 +209,12 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
                 f"\t\tRoutine {routine}. Getting CSV data from {url} and saving into {f}"
             )
 
-        df = plotter.get_original_data(url)
+        df = codata.get_original_data(url)
         df.to_csv(f)
+        files.append(f)
+        dict[country] = files
     else:  # -n is provided
+        dict = codata.adds
         url = vars._DATA_ITA_
 
         f = vars._FLD_IN_ + "/" + vars._NAZ_CSV_FILE_NAME_
@@ -212,10 +223,11 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
                 f"\t\tRoutine {routine}. Getting CSV data from {url} and saving into {f}"
             )
 
-        df = plotter.get_original_data(url)
+        df = codata.get_original_data(url)
         df.to_csv(f)
-        regs = plotter.adds["regs"]
-        e_regs = plotter.adds["e_regs"]
+        dict[country]=f
+        regs = codata.adds["regs"]
+        e_regs = codata.adds["e_regs"]
         if len(regs) > 0:
             if (len(regs)) == 1:
                 myreg = "-reg"
@@ -229,7 +241,7 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
                     f"\t\tRoutine {routine}. Getting CSV data from {url} and saving into {f}"
                 )
 
-            df = plotter.get_original_data(url)
+            df = codata.get_original_data(url)
             df.to_csv(f)
             for r in regs:
                 # extract data for regions
@@ -244,8 +256,9 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
                     print(
                         f"\t\tRoutine {routine}. Getting CSV data for {r} from {url} and saving into {f}"
                     )
-                df = plotter.get_original_data_for_region(url, r)
+                df = codata.get_original_data_for_region(url, r)
                 df.to_csv(f)
+                dict[r] = f
             # extract aggregate for all regions in regs
 
             f = (
@@ -260,8 +273,10 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
                 print(
                     f"\t\tRoutine {routine}. Getting CSV data for {regs} from {url} and saving into {f}"
                 )
-            df = plotter.get_original_data_for_regional_aggregate(url, regs)
+            df = codata.get_original_data_for_regional_aggregate(url, regs)
             df.to_csv(f)
+
+            dict["aggregates"] = f
         if len(e_regs) > 0:
             if (len(e_regs)) == 1:
                 myereg = "-reg"
@@ -281,8 +296,10 @@ def get_data_according_to_national_flag_and_save_to_files(plotter, national, ver
                 print(
                     f"\t\tRoutine {routine}. Getting CSV data for {e_regs} from {url} and saving into {f}"
                 )
-            df = plotter.get_original_data_for_national_excluded(url, e_regs)
+            df = codata.get_original_data_for_national_excluded(url, e_regs)
             df.to_csv(f)
+            dict["excluded"] = f
+    return dict
 
 
 def main():
@@ -301,6 +318,8 @@ def main():
 
     # adds dictionary for other parameters
     adds = {}
+
+    # add a plot dict: key=reg value=df
 
     # if country is NOT Italy, then national is False
     if country != "Italy":
@@ -341,24 +360,27 @@ def main():
     if not os.path.exists(vars._FLD_FIG_):
         os.makedirs(vars._FLD_FIG_)
 
-    # step 1 initialize class plotter
+    # step 1 initialize classes plotter and codataframes
     mydate = datetime.now()
     date_ts = mydate.strftime("%d-%b-%Y (%H:%M:%S.%f)")
     print(f"Routine {routine}. Creating folders at {date_ts}")
 
     if not national:
+        codata = codf.Codf(verbose)
         plotter = coplotter.Plotter(plot_type, country, inc, extend_range, verbose)
 
     else:
-        plotter = coplotter.Plotter(
-            plot_type, country, inc, extend_range, verbose, **adds
-        )
+        codata = codf.Codf(verbose, **adds)
 
     # step 2 get the data
     mydate = datetime.now()
     date_ts = mydate.strftime("%d-%b-%Y (%H:%M:%S.%f)")
     print(f"Routine {routine}. Getting data  at {date_ts}")
-    get_data_according_to_national_flag_and_save_to_files(plotter, national, verbose)
+    x = get_data_according_to_national_flag_and_save_to_files(
+        codata, national, country, verbose
+    )
+    print(f"X is {x}")
+    plotter = coplotter.Plotter(plot_type, country, inc, extend_range, verbose, x)
 
 
 main()

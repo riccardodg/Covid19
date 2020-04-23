@@ -7,17 +7,27 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		6A3911E124516E8400030BA0 /* codataframes.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = codataframes.py; sourceTree = "<group>"; };
+		6AC12EDD244DD5E5009507DB /* coplotter.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = coplotter.py; sourceTree = "<group>"; };
 		6AF495A82449A41600A9EE3F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		6AF495A92449EE0100A9EE3F /* main1.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = main1.py; sourceTree = "<group>"; };
+		6AF495AC244ADE9F00A9EE3F /* covars.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = covars.py; sourceTree = "<group>"; };
+		6AF495AD244ADF5300A9EE3F /* main.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = main.py; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		6AF4959D24498FC300A9EE3F = {
 			isa = PBXGroup;
 			children = (
+				6AF495AC244ADE9F00A9EE3F /* covars.py */,
+				6AF495AD244ADF5300A9EE3F /* main.py */,
+				6AC12EDD244DD5E5009507DB /* coplotter.py */,
+				6A3911E124516E8400030BA0 /* codataframes.py */,
+				6AF495A92449EE0100A9EE3F /* main1.py */,
 				6AF495A82449A41600A9EE3F /* README.md */,
 			);
 			sourceTree = "<group>";
-			usesTabs = 1;
+			usesTabs = 0;
 		};
 /* End PBXGroup section */
 
