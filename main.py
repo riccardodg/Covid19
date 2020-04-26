@@ -123,7 +123,7 @@ def argparser(routine):
         type=int,
         metavar="INC",
         help="The span days to plot graphs. If inc=10 is provided, the time span is grouped in 10-days samples. Default -1 days which means no increment",
-        default=-1,
+        default=7,
     )
 
     parser.add_argument(
@@ -225,7 +225,7 @@ def get_data_according_to_national_flag_and_save_to_files(
 
         df = codata.get_original_data(url)
         df.to_csv(f)
-        dict[country]=f
+        dict[country] = f
         regs = codata.adds["regs"]
         e_regs = codata.adds["e_regs"]
         if len(regs) > 0:
@@ -367,7 +367,6 @@ def main():
 
     if not national:
         codata = codf.Codf(verbose)
-        plotter = coplotter.Plotter(plot_type, country, inc, extend_range, verbose)
 
     else:
         codata = codf.Codf(verbose, **adds)
@@ -381,6 +380,7 @@ def main():
     )
     print(f"X is {x}")
     plotter = coplotter.Plotter(plot_type, country, inc, extend_range, verbose, x)
+    plotter.preparedata()
 
 
 main()

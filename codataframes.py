@@ -33,7 +33,7 @@ class Codf(object):
 
     def get_original_data(self, url):
         routine = classname + ": " + "get_original_data"
-        mydate = "date"
+        mydate = "data"
         if self.verbose:
             print(f"\t\tRoutine {routine}. Getting CSV data from {url}")
         df = pd.read_csv(url)
