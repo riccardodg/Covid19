@@ -77,8 +77,12 @@ class Plotter(object):
         if national:
             # prepare data for country, regions and excluded regions
             regs = self.dict["regs"]
+            if (len(regs)>1):
+                regs.append("aggregate for "+str(regs))
             regs.append(self.country)
-            regs.append(self.dict["excluded"])
+            regs.append(self.country+" w/o "+str(self.dict["e_regs"]))
+            
+            
             for r in regs:
                 # csv file
                 f = self.dict[r]
@@ -116,10 +120,23 @@ class Plotter(object):
             print(False)
 
     def plotsliceddata(self, r, df, first,last):
+        df_perc=pd.DataFrame()
         routine = classname + ": " + "plotsliceddata"
-        standards = ["totale_positivi", "dimessi_guariti", "deceduti", "totale_casi"]
-        slice = self.inc  # if inc =-1 all data are plotted
+        standards = ["totale_positivi", "dimessi_guariti", "deceduti", "totale_casi",
+        "ricoverati_con_sintomi" ,
+        "terapia_intensiva",
+        "totale_ospedalizzati",
+        "isolamento_domiciliare"]
+        incp = ["variazione_totale_positivi_perc", "nuovi_positivi_perc"]
+        df_perc['data']=df['data']
+        df_perc['variazione_totale_positivi_perc']=df['variazione_totale_positivi']/(df['totale_positivi']-df['variazione_totale_positivi'])
+        df_perc['nuovi_positivi_perc']=df['nuovi_positivi']/(df['totale_casi']-df['nuovi_positivi'])
+        #df_perc=df[['data','variazione_totale_positivi_perc','nuovi_positivi_perc']]
+        #slice = self.inc
+        #print(df_perc)
+        # plot data as they are
         self.__plot__(df,r,standards,first,last-1)
+        self.__plot_perc__(df_perc,r,incp,first,last-1)
         if self.verbose:
             print(
                 f"\t\tRoutine {routine}. Plotting data for {r} with slice of {slice} and plot_type {self.plot_type}"
@@ -141,12 +158,12 @@ class Plotter(object):
         colors=self.get_colors()
        
         f, ax = plt.subplots(1,1,figsize=(20,8))
-        title=f"Data as they are for region={r} from {df['data'][first]} to {df['data'][last]}"
+        title=f"Data as they are for {r.title()} from {df['data'][first]} to {df['data'][last]}"
         ax.set_title(title)
         
         
         for m in measures:
-            ax.set_ylabel('#')
+            ax.set_ylabel('# of occurrences')
             ax.plot(df['data'], df[m],  alpha=0.7, linewidth=2, label=m)
             
         ax.set_xlabel('Dates')
@@ -158,4 +175,34 @@ class Plotter(object):
         for spine in ('top', 'right', 'bottom', 'left'):
             ax.spines[spine].set_visible(True)
         plt.xticks(rotation='vertical')
+        plt.show();
+        
+        
+    def __plot_perc__(self,df, r,measures,first,last):
+        colors=self.get_colors()
+        len_m=len(measures)
+        f, axes = plt.subplots(1,len_m,figsize=(20,8))
+        #title=f"Increments % for {r.title()} from {df['data'][first]} to {df['data'][last]}"
+        xlabels=[first,last]
+         
+         
+        for m in measures:
+            title=f"Increments % of {m} for {r.title()}\nfrom {df['data'][first]} to {df['data'][last]}"
+            axes[measures.index(m)].set_title(title)
+            axes[measures.index(m)].set_ylabel(f'% of increments for {m}')
+            axes[measures.index(m)].plot(df['data'], df[m],  alpha=0.7, linewidth=2, label=m)
+            axes[measures.index(m)].set_xlabel('Dates')
+            axes[measures.index(m)].yaxis.set_tick_params(length=0)
+            axes[measures.index(m)].xaxis.set_tick_params(length=0)
+            #axes[measures.index(m)].set_xticks(rotation='vertical')
+            axes[measures.index(m)].set_xticklabels([], rotation='vertical')
+            axes[measures.index(m)].grid(b=True, which='major', c='w', lw=2, ls='-')
+            legend = axes[measures.index(m)].legend()
+            legend.get_frame().set_alpha(0.5)
+             
+        
+        for spine in ('top', 'right', 'bottom', 'left'):
+            for ax in axes:
+                axes[measures.index(m)].spines[spine].set_visible(True)
+        #plt.xticks(rotation='vertical')
         plt.show();

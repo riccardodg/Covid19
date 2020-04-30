@@ -40,8 +40,8 @@ class Codf(object):
         try:
             if self.verbose:
                 print(f"\t\t\tRoutine {routine}. national is True")
-            mydate = self.adds["national"]
-            df[mydate] = df.data.apply(
+            
+            df["data"] = df.data.apply(
                 lambda x: datetime.datetime.strptime(x[0:10], "%Y-%m-%d").strftime(
                     "%m/%d/%Y"
                 )

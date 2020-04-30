@@ -276,7 +276,7 @@ def get_data_according_to_national_flag_and_save_to_files(
             df = codata.get_original_data_for_regional_aggregate(url, regs)
             df.to_csv(f)
 
-            dict["aggregates"] = f
+            dict["aggregate for "+str(regs)] = f
         if len(e_regs) > 0:
             if (len(e_regs)) == 1:
                 myereg = "-reg"
@@ -298,7 +298,8 @@ def get_data_according_to_national_flag_and_save_to_files(
                 )
             df = codata.get_original_data_for_national_excluded(url, e_regs)
             df.to_csv(f)
-            dict["excluded"] = f
+            #dict["excluded"] = f
+            dict[country+" w/o "+str(e_regs)]=f
     return dict
 
 
