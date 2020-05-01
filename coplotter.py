@@ -129,8 +129,8 @@ class Plotter(object):
         "isolamento_domiciliare"]
         incp = ["variazione_totale_positivi_perc", "nuovi_positivi_perc"]
         df_perc['data']=df['data']
-        df_perc['variazione_totale_positivi_perc']=df['variazione_totale_positivi']/(df['totale_positivi']-df['variazione_totale_positivi'])
-        df_perc['nuovi_positivi_perc']=df['nuovi_positivi']/(df['totale_casi']-df['nuovi_positivi'])
+        df_perc['variazione_totale_positivi_perc']=(df['variazione_totale_positivi']/(df['totale_positivi']-df['variazione_totale_positivi'])*100)
+        df_perc['nuovi_positivi_perc']=(df['nuovi_positivi']/(df['totale_casi']-df['nuovi_positivi'])*100)
         #df_perc=df[['data','variazione_totale_positivi_perc','nuovi_positivi_perc']]
         #slice = self.inc
         #print(df_perc)
