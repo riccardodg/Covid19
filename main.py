@@ -123,7 +123,7 @@ def argparser(routine):
         type=int,
         metavar="INC",
         help="The span days to plot graphs. If inc=10 is provided, the time span is grouped in 10-days samples. Default -1 days which means no increment",
-        default=7,
+        default=-1,
     )
 
     parser.add_argument(

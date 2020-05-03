@@ -70,6 +70,9 @@ class Plotter(object):
         routine = classname + ": " + "preparedata"
         total_rows = 0
         slices_num = 0
+        slices=[]
+        fs=[]
+        ls=[]
         if self.verbose:
             print(f"\n\tRoutine {routine}")
         # start from national
@@ -80,7 +83,8 @@ class Plotter(object):
             if (len(regs)>1):
                 regs.append("aggregate for "+str(regs))
             regs.append(self.country)
-            regs.append(self.country+" w/o "+str(self.dict["e_regs"]))
+            if len(self.dict["e_regs"])>0:
+                regs.append(self.country+" w/o "+str(self.dict["e_regs"]))
             
             
             for r in regs:
@@ -90,36 +94,52 @@ class Plotter(object):
                     print(
                         f"\tRoutine {routine}. Preparing data for {r} from {f}. National is {national}"
                     )
-
                 df = pd.read_csv(f)
                 total_rows = df.count()[0]
-                slices_num = total_rows // self.inc + 1
-                if self.verbose:
-                    print(
+                # create slices only if inc not -1
+                if (self.inc != -1):
+                    
+                    slices_num = total_rows // self.inc + 1
+                    if self.verbose:
+                        print(
                         f"\tRoutine {routine}. Slicing data. Rows {total_rows} sliced into {slices_num} groups "
-                    )
-                for i in range(slices_num):
-                    first=i * self.inc
-                    if i==slices_num-1:
-                        last=total_rows
-                    else:
-                        last=(i + 1) * self.inc
-                    df_sliced = df[first : last]
-                    #print(first, last)
-                    self.plotsliceddata(r, df_sliced,first,last)
-                # lastly plots all the data
-                if self.verbose:
-                    print(
-                        f"\tRoutine {routine}. Plotting all data. Rows {total_rows}"
-                    )
-                first=0
-                last=total_rows
-                self.plotsliceddata(r, df,first,last)
-                # print(df)
+                        )
+                    for i in range(slices_num):
+                        first=i * self.inc
+                        if i==slices_num-1:
+                            last=total_rows
+                        else:
+                            last=(i + 1) * self.inc
+                        df_sliced = df[first : last]
+                        #print(first, last)
+                        
+                        slices.append(df_sliced)
+                        fs.append(first)
+                        ls.append(last)
+                    # lastly plots all the data
+                    if self.verbose:
+                        print(
+                        f"\tRoutine {routine}. Plotting { len(slices) } sliced data for {r}"
+                        )
+                    for x in range(len(slices)):
+                        self.plotsliceddata(r, slices[x],fs[x],ls[x],0)
+                    for x in range(len(slices)):
+                        self.plotsliceddata(r, slices[x],fs[x],ls[x],1)
+                        
+                else:
+                    if self.verbose:
+                        print(
+                            f"\tRoutine {routine}. Plotting all data. Rows {total_rows}"
+                        )
+                    first=0
+                    last=total_rows
+                    self.plotsliceddata(r, df,first,last,0)
+                    self.plotsliceddata(r, df,first,last,1)
+            # print(df)
         else:
             print(False)
 
-    def plotsliceddata(self, r, df, first,last):
+    def plotsliceddata(self, r, df, first,last, switch):
         df_perc=pd.DataFrame()
         routine = classname + ": " + "plotsliceddata"
         standards = ["totale_positivi", "dimessi_guariti", "deceduti", "totale_casi",
@@ -135,13 +155,16 @@ class Plotter(object):
         #slice = self.inc
         #print(df_perc)
         # plot data as they are
-        self.__plot__(df,r,standards,first,last-1)
-        self.__plot_perc__(df_perc,r,incp,first,last-1)
+        if switch==0:
+            self.__plot__(df,r,standards,first,last-1)
+        elif switch ==1:
+            self.__plot_perc__(df_perc,r,incp,first,last-1)
+        """
         if self.verbose:
             print(
                 f"\t\tRoutine {routine}. Plotting data for {r} with slice of {slice} and plot_type {self.plot_type}"
             )
-        """
+        
         if self.plot_type == "standard":
             # plot exponential, logistic, logistic4p fits.
             
