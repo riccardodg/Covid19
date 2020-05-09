@@ -60,7 +60,7 @@ def argparser(routine):
         help="Select a Plot Type",
         metavar="PLOT_TYPE",
         type=str,
-        choices=["standard", "predicted", "SIR", "SIRS"],
+        choices=["standard","perc", "predicted", "SIR", "SIRS"],
         default="",
     )
     parser.add_argument(
@@ -114,6 +114,16 @@ def argparser(routine):
         help='Print verbose information. Default=False"',
         default=False,
     )
+    
+    parser.add_argument(
+        "-s",
+        "--save",
+        action="store_true",
+        required=False,
+        dest="save",
+        help='Save plots into figures. Default=False"',
+        default=False,
+    )
 
     parser.add_argument(
         "-i",
@@ -150,8 +160,9 @@ def argparser(routine):
     inc = args.inc
     extend_range = args.extend_range
     verbose = args.verbose
+    save = args.save
 
-    return plot_type, country, national, regs, e_regs, inc, extend_range, verbose
+    return plot_type, country, national, regs, e_regs, inc, extend_range, verbose, save
 
 
 """
@@ -299,7 +310,7 @@ def get_data_according_to_national_flag_and_save_to_files(
             df = codata.get_original_data_for_national_excluded(url, e_regs)
             df.to_csv(f)
             #dict["excluded"] = f
-            dict[country+" w/o "+str(e_regs)]=f
+            dict[country+"\nw/o\n"+str(e_regs)]=f
     return dict
 
 
@@ -315,6 +326,7 @@ def main():
         inc,
         extend_range,
         verbose,
+        save
     ) = argparser(routine)
 
     # adds dictionary for other parameters
@@ -344,6 +356,7 @@ def main():
     print(f"\t\tincrement {inc}")
     print(f"\t\textended range {extend_range}")
     print(f"\t\tverbose {verbose}")
+    print(f"\t\tSave plots? {save}")
 
     start_date = datetime.now()
 
@@ -360,7 +373,9 @@ def main():
 
     if not os.path.exists(vars._FLD_FIG_):
         os.makedirs(vars._FLD_FIG_)
-
+    if (save) and not os.path.exists(vars._FLD_FIG_+"/"+vars.the_date):
+        os.makedirs(vars._FLD_FIG_+"/"+vars.the_date)
+    #sys.exit(-1)
     # step 1 initialize classes plotter and codataframes
     mydate = datetime.now()
     date_ts = mydate.strftime("%d-%b-%Y (%H:%M:%S.%f)")
@@ -379,9 +394,11 @@ def main():
     x = get_data_according_to_national_flag_and_save_to_files(
         codata, national, country, verbose
     )
+    x['save']=save
+    x['fig_dir']=vars._FLD_FIG_+"/"+vars.the_date
     print(f"X is {x}")
     plotter = coplotter.Plotter(plot_type, country, inc, extend_range, verbose, x)
-    plotter.preparedata()
+    plotter.preparedata(plot_type)
 
 
 main()

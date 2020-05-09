@@ -1,5 +1,7 @@
 import pandas as pd
 import datetime
+import os
+
 
 import matplotlib.pyplot as plt
 import matplotlib._color_data as mcd
@@ -66,15 +68,16 @@ class Plotter(object):
     prepare data
     """
 
-    def preparedata(self):
+    def preparedata(self, plot_type):
         routine = classname + ": " + "preparedata"
         total_rows = 0
         slices_num = 0
         slices=[]
         fs=[]
         ls=[]
+        savefile=""
         if self.verbose:
-            print(f"\n\tRoutine {routine}")
+            print(f"\n\tRoutine {routine} for {plot_type}")
         # start from national
         national = self.dict["national"]
         if national:
@@ -84,7 +87,7 @@ class Plotter(object):
                 regs.append("aggregate for "+str(regs))
             regs.append(self.country)
             if len(self.dict["e_regs"])>0:
-                regs.append(self.country+" w/o "+str(self.dict["e_regs"]))
+                regs.append(self.country+"\nw/o\n"+str(self.dict["e_regs"]))
             
             
             for r in regs:
@@ -94,6 +97,7 @@ class Plotter(object):
                     print(
                         f"\tRoutine {routine}. Preparing data for {r} from {f}. National is {national}"
                     )
+                savefile=os.path.splitext(f)[0]
                 df = pd.read_csv(f)
                 total_rows = df.count()[0]
                 # create slices only if inc not -1
@@ -121,10 +125,12 @@ class Plotter(object):
                         print(
                         f"\tRoutine {routine}. Plotting { len(slices) } sliced data for {r}"
                         )
-                    for x in range(len(slices)):
-                        self.plotsliceddata(r, slices[x],fs[x],ls[x],0)
-                    for x in range(len(slices)):
-                        self.plotsliceddata(r, slices[x],fs[x],ls[x],1)
+                    if (plot_type=='standard'):
+                        for x in range(len(slices)):
+                            self.plotsliceddata(r, slices[x],fs[x],ls[x],0,savefile)
+                    if (plot_type=='perc'):
+                        for x in range(len(slices)):
+                            self.plotsliceddata(r, slices[x],fs[x],ls[x],1,savefile)
                         
                 else:
                     if self.verbose:
@@ -133,13 +139,15 @@ class Plotter(object):
                         )
                     first=0
                     last=total_rows
-                    self.plotsliceddata(r, df,first,last,0)
-                    self.plotsliceddata(r, df,first,last,1)
+                    if (plot_type=='standard'):
+                        self.plotsliceddata(r, df,first,last,0,savefile)
+                    if (plot_type=='perc'):
+                        self.plotsliceddata(r, df,first,last,1,savefile)
             # print(df)
         else:
             print(False)
 
-    def plotsliceddata(self, r, df, first,last, switch):
+    def plotsliceddata(self, r, df, first,last, switch, savefile):
         df_perc=pd.DataFrame()
         routine = classname + ": " + "plotsliceddata"
         standards = ["totale_positivi", "dimessi_guariti", "deceduti", "totale_casi",
@@ -147,18 +155,19 @@ class Plotter(object):
         "terapia_intensiva",
         "totale_ospedalizzati",
         "isolamento_domiciliare"]
-        incp = ["variazione_totale_positivi_perc", "nuovi_positivi_perc"]
+        incp = ["variazione_totale_positivi_perc", "nuovi_positivi_perc","variazione_deceduti_perc"]
         df_perc['data']=df['data']
         df_perc['variazione_totale_positivi_perc']=(df['variazione_totale_positivi']/(df['totale_positivi']-df['variazione_totale_positivi'])*100)
         df_perc['nuovi_positivi_perc']=(df['nuovi_positivi']/(df['totale_casi']-df['nuovi_positivi'])*100)
+        df_perc['variazione_deceduti_perc']=((df['deceduti']-df['deceduti'].shift())/(df['deceduti'].shift())*100)
         #df_perc=df[['data','variazione_totale_positivi_perc','nuovi_positivi_perc']]
         #slice = self.inc
         #print(df_perc)
         # plot data as they are
         if switch==0:
-            self.__plot__(df,r,standards,first,last-1)
+            self.__plot__(df,r,standards,first,last-1,savefile)
         elif switch ==1:
-            self.__plot_perc__(df_perc,r,incp,first,last-1)
+            self.__plot_perc__(df_perc,r,incp,first,last-1,savefile)
         """
         if self.verbose:
             print(
@@ -177,7 +186,7 @@ class Plotter(object):
            
         """
 
-    def __plot__(self,df, r,measures,first,last):
+    def __plot__(self,df, r,measures,first,last,savefile):
         colors=self.get_colors()
        
         f, ax = plt.subplots(1,1,figsize=(20,8))
@@ -198,10 +207,15 @@ class Plotter(object):
         for spine in ('top', 'right', 'bottom', 'left'):
             ax.spines[spine].set_visible(True)
         plt.xticks(rotation='vertical')
-        plt.show();
+        if(self.dict['save']):
+            figfile=self.dict['fig_dir']+"/"+savefile.replace("data_in","")+"_from_"+df['data'][first].replace("/","-")+"_to_"+df['data'][last].replace("/","-")
+            #plt.save("{figfile}.png")
+            plt.savefig(f"{figfile}_{self.plot_type}.png")
+        else:
+            plt.show();
         
         
-    def __plot_perc__(self,df, r,measures,first,last):
+    def __plot_perc__(self,df, r,measures,first,last,savefile):
         colors=self.get_colors()
         len_m=len(measures)
         f, axes = plt.subplots(1,len_m,figsize=(20,8))
@@ -210,7 +224,7 @@ class Plotter(object):
          
          
         for m in measures:
-            title=f"Increments % of {m} for {r.title()}\nfrom {df['data'][first]} to {df['data'][last]}"
+            title=f"Incremental % of {m} for {r.title()}\nfrom {df['data'][first]} to {df['data'][last]}"
             axes[measures.index(m)].set_title(title)
             axes[measures.index(m)].set_ylabel(f'% of increments for {m}')
             axes[measures.index(m)].plot(df['data'], df[m],  alpha=0.7, linewidth=2, label=m)
@@ -228,4 +242,9 @@ class Plotter(object):
             for ax in axes:
                 axes[measures.index(m)].spines[spine].set_visible(True)
         #plt.xticks(rotation='vertical')
-        plt.show();
+        if(self.dict['save']):
+            figfile=self.dict['fig_dir']+"/"+savefile.replace("data_in","")+"_from_"+df['data'][first].replace("/","-")+"_to_"+df['data'][last].replace("/","-")
+            #plt.save("{figfile}.png")
+            plt.savefig(f"{figfile}_{self.plot_type}.png")
+        else:
+            plt.show();
