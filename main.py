@@ -60,7 +60,7 @@ def argparser(routine):
         help="Select a Plot Type",
         metavar="PLOT_TYPE",
         type=str,
-        choices=["standard","perc", "predicted", "SIR", "SIRS"],
+        choices=["standard","perc", "predicted", "SIR", "SIRS","norm_tc","norm_tp"],
         default="",
     )
     parser.add_argument(
