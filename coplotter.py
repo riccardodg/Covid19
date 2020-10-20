@@ -2,6 +2,8 @@ import pandas as pd
 import datetime
 import os
 
+import covars as covars
+
 
 import matplotlib.pyplot as plt
 import matplotlib._color_data as mcd
@@ -137,7 +139,12 @@ class Plotter(object):
                     if (plot_type=='norm_tp'):
                         for x in range(len(slices)):
                             self.plotsliceddata(r, slices[x],fs[x],ls[x],3,savefile)
-                        
+                    if (plot_type=='norm_tc_perc'):
+                        for x in range(len(slices)):
+                            self.plotsliceddata(r, slices[x],fs[x],ls[x],4,savefile)
+                    if (plot_type=='norm_tp_perc'):
+                        for x in range(len(slices)):
+                            self.plotsliceddata(r, slices[x],fs[x],ls[x],5,savefile)
                 else:
                     if self.verbose:
                         print(
@@ -149,6 +156,14 @@ class Plotter(object):
                         self.plotsliceddata(r, df,first,last,0,savefile)
                     if (plot_type=='perc'):
                         self.plotsliceddata(r, df,first,last,1,savefile)
+                    if (plot_type=='norm_tc'):
+                        self.plotsliceddata(r, df,first,last,2,savefile)
+                    if (plot_type=='norm_tp'):
+                        self.plotsliceddata(r, df,first,last,3,savefile)
+                    if (plot_type=='norm_tc_perc'):
+                        self.plotsliceddata(r, df,first,last,4,savefile)
+                    if (plot_type=='norm_tp_perc'):
+                        self.plotsliceddata(r, df,first,last,5,savefile)
             # print(df)
         else:
             print(False)
@@ -157,6 +172,8 @@ class Plotter(object):
         df_perc=pd.DataFrame()
         df_norm_tc=pd.DataFrame()
         df_norm_tp=pd.DataFrame()
+        df_norm_tc_perc=pd.DataFrame()
+        df_norm_tp_perc=pd.DataFrame()
         routine = classname + ": " + "plotsliceddata"
 
         #measures for standard plot
@@ -213,6 +230,54 @@ class Plotter(object):
         df_norm_tp['totale_ospedalizzati_n']=(df['totale_ospedalizzati']/df['totale_positivi'])*100
         df_norm_tp['isolamento_domiciliare_n']=(df['isolamento_domiciliare']/df['totale_positivi'])*100
         
+        
+        #measures for norm_tc_perc plot
+        norm_tc_perc = ["totale_positivi_perc", "dimessi_guariti_perc", "deceduti_perc", "totale_casi_perc",
+        "ricoverati_con_sintomi_perc" ,
+        "terapia_intensiva_perc",
+        "totale_ospedalizzati_perc",
+        "isolamento_domiciliare_perc"]
+        
+        
+        
+        
+        #populate df
+        df_norm_tc_perc['data']=df['data']
+        df_norm_tc_perc['totale_casi_shifted']=df['totale_casi']-df['totale_casi'].shift(periods=covars._PERIODS_)
+        df_norm_tc_perc['totale_casi_inc']=df['totale_casi']-df['totale_casi'].shift()
+        
+        df_norm_tc_perc['totale_positivi_perc']=((df['totale_positivi']-df['totale_positivi'].shift())/df_norm_tc_perc['totale_casi_shifted'])*100
+        df_norm_tc_perc['dimessi_guariti_perc']=((df['dimessi_guariti']-df['dimessi_guariti'].shift())/df_norm_tc_perc['totale_casi_shifted'])*100
+        df_norm_tc_perc['deceduti_perc']=((df['deceduti']-df['deceduti'].shift())/df_norm_tc_perc['totale_casi_shifted'])*100
+        df_norm_tc_perc['totale_casi_perc']=(df_norm_tc_perc['totale_casi_shifted']/df_norm_tc_perc['totale_casi_shifted'])*100
+        df_norm_tc_perc['ricoverati_con_sintomi_perc']=((df['ricoverati_con_sintomi']-df['ricoverati_con_sintomi'].shift())/df_norm_tc_perc['totale_casi_shifted'])*100
+        df_norm_tc_perc['terapia_intensiva_perc']=((df['terapia_intensiva']-df['terapia_intensiva'].shift())/df_norm_tc_perc['totale_casi_shifted'])*100
+        df_norm_tc_perc['totale_ospedalizzati_perc']=((df['totale_ospedalizzati']-df['totale_ospedalizzati'].shift())/df_norm_tc_perc['totale_casi_shifted'])*100
+        df_norm_tc_perc['isolamento_domiciliare_perc']=((df['isolamento_domiciliare']-df['isolamento_domiciliare'].shift())/df_norm_tc_perc['totale_casi_shifted'])*100
+        
+        #measures for norm_tp_perc plot
+        norm_tp_perc = ["totale_positivi_perc", "dimessi_guariti_perc", "deceduti_perc",
+        "ricoverati_con_sintomi_perc" ,
+        "terapia_intensiva_perc",
+        "totale_ospedalizzati_perc",
+        "isolamento_domiciliare_perc"]
+        
+        
+        
+        
+        #populate df
+        df_norm_tp_perc['data']=df['data']
+        df_norm_tp_perc['totale_positivi_shifted']=df['totale_positivi']-df['totale_positivi'].shift(periods=covars._PERIODS_)
+        
+        df_norm_tp_perc['totale_positivi_perc']=((df['totale_positivi']-df['totale_positivi'].shift())/df_norm_tp_perc['totale_positivi_shifted'])*100
+        df_norm_tp_perc['dimessi_guariti_perc']=((df['dimessi_guariti']-df['dimessi_guariti'].shift())/df_norm_tp_perc['totale_positivi_shifted'])*100
+        df_norm_tp_perc['deceduti_perc']=((df['deceduti']-df['deceduti'].shift())/df_norm_tp_perc['totale_positivi_shifted'])*100
+        df_norm_tp_perc['totale_positivi_perc']=(df_norm_tp_perc['totale_positivi_shifted']/df_norm_tp_perc['totale_positivi_shifted'])*100
+        df_norm_tp_perc['ricoverati_con_sintomi_perc']=((df['ricoverati_con_sintomi']-df['ricoverati_con_sintomi'].shift())/df_norm_tp_perc['totale_positivi_shifted'])*100
+        df_norm_tp_perc['terapia_intensiva_perc']=((df['terapia_intensiva']-df['terapia_intensiva'].shift())/df_norm_tp_perc['totale_positivi_shifted'])*100
+        df_norm_tp_perc['totale_ospedalizzati_perc']=((df['totale_ospedalizzati']-df['totale_ospedalizzati'].shift())/df_norm_tp_perc['totale_positivi_shifted'])*100
+        df_norm_tp_perc['isolamento_domiciliare_perc']=((df['isolamento_domiciliare']-df['isolamento_domiciliare'].shift())/df_norm_tp_perc['totale_positivi_shifted'])*100
+        
         #df_perc=df[['data','variazione_totale_positivi_perc','nuovi_positivi_perc']]
         #slice = self.inc
         #print(df_perc)
@@ -225,6 +290,10 @@ class Plotter(object):
             self.__plot_norm_tc__(df_norm_tc,r,norm_tc,first,last-1,savefile)
         elif switch ==3:
             self.__plot_norm_tp__(df_norm_tp,r,norm_tp,first,last-1,savefile)
+        elif switch ==4:
+            self.__plot_norm_tc_perc__(df_norm_tc_perc,r,norm_tc_perc,first,last-1,savefile)
+        elif switch ==5:
+            self.__plot_norm_tp_perc__(df_norm_tp_perc,r,norm_tp_perc,first,last-1,savefile)
             """
         """
         if self.verbose:
@@ -301,8 +370,66 @@ class Plotter(object):
          else:
              plt.show();
              
+                  
              
+    def __plot_norm_tc_perc__(self,df, r,measures,first,last,savefile):
+         colors=self.get_colors()
+                 
+         f, ax = plt.subplots(1,1,figsize=(20,8))
+         title=f"Data Normalized on totale_casi_shifted by {covars._PERIODS_} days for {r.title()} from {df['data'][first]} to {df['data'][last]}"
+         ax.set_title(title)
+                  
+              
+         for m in measures:
+             ax.set_ylabel('# of occurrences')
+             ax.plot(df['data'], df[m],  alpha=0.7, linewidth=2, label=m)
+                      
+         ax.set_xlabel('Dates')
+         ax.yaxis.set_tick_params(length=0)
+         ax.xaxis.set_tick_params(length=0)
+         ax.grid(b=True, which='major', c='w', lw=2, ls='-')
+         legend = ax.legend()
+         legend.get_frame().set_alpha(0.5)
+         for spine in ('top', 'right', 'bottom', 'left'):
+              ax.spines[spine].set_visible(True)
+         plt.xticks(rotation='vertical')
+         if(self.dict['save']):
+             figfile=self.dict['fig_dir']+"/"+savefile.replace("data_in","")+"_from_"+df['data'][first].replace("/","-")+"_to_"+df['data'][last].replace("/","-")
+             #plt.save("{figfile}.png")
+             plt.savefig(f"{figfile}_{self.plot_type}.png")
+         else:
+             plt.show();
+                       
+               
              
+    def __plot_norm_tp_perc__(self,df, r,measures,first,last,savefile):
+         colors=self.get_colors()
+                     
+         f, ax = plt.subplots(1,1,figsize=(20,8))
+         title=f"Data Normalized on totale_positivi_shifted by {covars._PERIODS_} days for {r.title()} from {df['data'][first]} to {df['data'][last]}"
+         ax.set_title(title)
+                      
+                  
+         for m in measures:
+             ax.set_ylabel('# of occurrences')
+             ax.plot(df['data'], df[m],  alpha=0.7, linewidth=2, label=m)
+                          
+         ax.set_xlabel('Dates')
+         ax.yaxis.set_tick_params(length=0)
+         ax.xaxis.set_tick_params(length=0)
+         ax.grid(b=True, which='major', c='w', lw=2, ls='-')
+         legend = ax.legend()
+         legend.get_frame().set_alpha(0.5)
+         for spine in ('top', 'right', 'bottom', 'left'):
+              ax.spines[spine].set_visible(True)
+         plt.xticks(rotation='vertical')
+         if(self.dict['save']):
+             figfile=self.dict['fig_dir']+"/"+savefile.replace("data_in","")+"_from_"+df['data'][first].replace("/","-")+"_to_"+df['data'][last].replace("/","-")
+             #plt.save("{figfile}.png")
+             plt.savefig(f"{figfile}_{self.plot_type}.png")
+         else:
+             plt.show();
+                           
         
     def __plot_norm_tp__(self,df, r,measures,first,last,savefile):
         colors=self.get_colors()

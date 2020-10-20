@@ -78,3 +78,6 @@ _NAZ_CSV_FILE_NAME_EXCL_SUFFIX_ = "_" + the_date + ".csv"  # suffix for regional
 _FLD_IN_ = "data_in"  # where data are saved
 _FLD_OUT_ = "data_out"  # where elaborated files are saved
 _FLD_FIG_ = "figs"  # folder containing graphs
+
+#MISC
+_PERIODS_=15 # days to complete an evolution in covid
