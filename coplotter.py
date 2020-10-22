@@ -1,6 +1,7 @@
 import pandas as pd
 import datetime
 import os
+import numpy as np
 
 import covars as covars
 
@@ -78,6 +79,7 @@ class Plotter(object):
         fs=[]
         ls=[]
         savefile=""
+        dict_slices={}
         if self.verbose:
             print(f"\n\tRoutine {routine} for {plot_type}")
         # start from national
@@ -88,12 +90,14 @@ class Plotter(object):
             if (len(regs)>1):
                 regs.append("aggregate for "+str(regs))
             regs.append(self.country)
+            #print("XXX ",regs)
             if len(self.dict["e_regs"])>0:
                 regs.append(self.country+"\nw/o\n"+str(self.dict["e_regs"]))
             
             
             for r in regs:
                 # csv file
+                temp_slices=[]
                 f = self.dict[r]
                 if self.verbose:
                     print(
@@ -117,13 +121,16 @@ class Plotter(object):
                         else:
                             last=(i + 1) * self.inc
                         df_sliced = df[first : last]
-                        #print(first, last)
+                        
                         
                         slices.append(df_sliced)
+                        temp_slices.append(df_sliced)
                         fs.append(first)
                         ls.append(last)
+                        #print("VVV i=",i,first, last, r, len(temp_slices))
                     # lastly plots all the data
-                    if self.verbose:
+                    dict_slices[r]=temp_slices
+                    if self.verbose and not self.plot_type == "behaves":
                         print(
                         f"\tRoutine {routine}. Plotting { len(slices) } sliced data for {r}"
                         )
@@ -145,6 +152,8 @@ class Plotter(object):
                     if (plot_type=='norm_tp_perc'):
                         for x in range(len(slices)):
                             self.plotsliceddata(r, slices[x],fs[x],ls[x],5,savefile)
+                
+                
                 else:
                     if self.verbose:
                         print(
@@ -165,9 +174,136 @@ class Plotter(object):
                     if (plot_type=='norm_tp_perc'):
                         self.plotsliceddata(r, df,first,last,5,savefile)
             # print(df)
+            if (plot_type=='behaves'):
+                print(
+                    f"\tRoutine {routine}. Plotting { len(slices) } sliced data for {regs}"
+                    )
+                self.plotbehaves(regs, dict_slices,fs,ls,1,savefile)
         else:
             print(False)
 
+    
+    def plotbehaves(self, regs, dict_slices, fs, ls, switch, savefile):
+        routine = classname + ": " + "plotbehaves"
+        dict_to_plot={}
+        standards = ["deceduti", "terapia_intensiva"]
+        #"dimessi_guariti", "deceduti", "totale_casi",
+        #"ricoverati_con_sintomi" ,
+        #"terapia_intensiva",
+        #"totale_ospedalizzati",
+        #"isolamento_domiciliare"]
+        
+        key=''
+        if self.verbose:
+            print(f"\t\tRoutine {routine}. Plotting data for {regs} with a dictionary of slices of length {len(dict_slices)} and plot_type {self.plot_type}. Slices created from {self.inc} "
+                   )
+        
+        for m in standards:
+            meastoplot=m+"_shifted"
+            
+            #offset=0
+            for r in regs:
+                #offset=0
+                temp_dfs=[]
+                dfs=dict_slices[r]
+                i=0
+                for x in range(len(dfs)):
+                    
+                    d0=dfs[x]['data'].iloc[0]
+                    d1=dfs[x]['data'].iloc[-1]
+                    key=r+"-"+meastoplot+"-"+str(d0)+"-"+str(d1)
+                    #key=r+"-"+m+"-"+str(fs[x])+"-"+str(ls[x])
+                    offset=0
+                    #start=0
+                    temp_df=pd.DataFrame()
+                    if (self.verbose):
+                        print(f"\t\t\tRoutine {routine}, reg = {r}, length of slices {len(dfs)} and measure {m}")
+                    
+                    #offset
+                    
+                    if i==0:
+                        offset=0
+                        start=dfs[x][m].iloc[0]
+                        start1=dfs[x][m].iloc[0]
+                        
+                    else:
+                        prev=temp_dfs[i-1]
+                        offset=prev[m].iloc[-1]
+                        start1=dfs[x][m].iloc[0]
+                        
+                    
+                    temp_df[m]=dfs[x][m]
+                    
+                    temp_df['offset']=offset
+                    temp_df['start']=start
+                    value=start-(start1-offset)
+                    
+                    temp_df['x']=value
+                    temp_df[meastoplot]=temp_df[m]-temp_df['offset']+value
+                    temp_df['counter'] = np.arange(len(temp_df))
+                    temp_df['data']=dfs[x]['data']
+                    temp_dfs.append(temp_df)
+                    #print(i,key, temp_df)
+               
+                    #print(i,r, temp_df)
+                    dict_to_plot[meastoplot+"-"+r]=temp_dfs
+                    i=i+1
+    
+        
+        #f, ax = plt.subplots(1,1,figsize=(20,8))
+        
+        colors=self.get_colors()
+        
+        
+        len_m=len(dict_to_plot)
+        f, axes = plt.subplots(1,len_m,figsize=(20,8))
+        f.tight_layout(pad=3.0)
+        #title=f"Increments % for {r.title()} from {df['data'][first]} to {df['data'][last]}"
+        
+         
+        '''
+        for m in measures:
+            title=f"Incremental % of {m} for {r.title()}\nfrom {df['data'][first]} to {df['data'][last]}"
+            axes[measures.index(m)].set_title(title)
+            axes[measures.index(m)].set_ylabel(f'% of increments for {m}')
+            axes[measures.index(m)].plot(df['data'], df[m],  alpha=0.7, linewidth=2, label=m)
+            axes[measures.index(m)].set_xlabel('Dates')
+            axes[measures.index(m)].yaxis.set_tick_params(length=0)
+            axes[measures.index(m)].xaxis.set_tick_params(length=0)
+            #axes[measures.index(m)].set_xticks(rotation='vertical')
+            axes[measures.index(m)].set_xticklabels([], rotation='vertical')
+            axes[measures.index(m)].grid(b=True, which='major', c='w', lw=2, ls='-')
+            legend = axes[measures.index(m)].legend()
+            legend.get_frame().set_alpha(0.5)
+        '''
+        j=0
+        for k,dfs in dict_to_plot.items():
+            m=k.split("-")[0]
+            r=k.split("-")[1]
+            print(m,k)
+            
+            print("THE DICT ",k,len(dfs), len(dict_to_plot),j)
+            
+            for t in range(len(dfs)):
+                df=dfs[t]
+                #print(m,df)
+                d0=df['data'].iloc[0]
+                d1=df['data'].iloc[-1]
+                title=f"Data (shifted) {m} \nfor {r.title()} "
+                axes[j].set_title(title)
+                axes[j].set_ylabel('# of occurrences ')
+            
+                axes[j].plot(df['counter'],df[m],  alpha=0.7, linewidth=2, label=" From "+d0 +" To " +d1)
+                legend = axes[j].legend()
+                legend.get_frame().set_alpha(0.5)
+                axes[j].grid(b=True, which='major', c='w', lw=2, ls='-')
+            for spine in ('top', 'right', 'bottom', 'left'):
+                for ax in axes:
+                    axes[j].spines[spine].set_visible(True)
+            j=j+1
+        plt.show()
+            
+        
     def plotsliceddata(self, r, df, first,last, switch, savefile):
         df_perc=pd.DataFrame()
         df_norm_tc=pd.DataFrame()
