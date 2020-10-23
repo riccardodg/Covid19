@@ -179,6 +179,11 @@ class Plotter(object):
                     f"\tRoutine {routine}. Plotting { len(slices) } sliced data for {regs}"
                     )
                 self.plotbehaves(regs, dict_slices,fs,ls,1,savefile)
+            if (plot_type=='corr'):
+                print(
+                    f"\tRoutine {routine}. Plotting { len(slices) } sliced data for {regs}"
+                    )
+                self.plotcorr(regs, dict_slices,fs,ls,1,savefile)
         else:
             print(False)
 
@@ -283,7 +288,65 @@ class Plotter(object):
                     axes[regs.index(r),standards.index(m)].spines[spine].set_visible(True)
             
         plt.show()
-            
+    
+    def plotcorr(self, regs, dict_slices, fs, ls, switch, savefile):
+        routine = classname + ": " + "plotcorr"
+        dict_to_plot={}
+        colors=self.get_colors()
+        measures = ["tamponi", "totale_casi"]#,"totale_positivi"]
+        corr_m=["tamponi-totale_casi","tamponi-totale_positivi","totale_casi-totale_positivi"]
+        
+        len_m=len(corr_m)
+        len_r=len(regs)
+        if self.verbose:
+            print(f"\t\tRoutine {routine}. Plotting data for {regs} with a dictionary of slices of length {len(dict_slices)} and plot_type {self.plot_type}. Slices created from {self.inc} "
+                      )
+           
+        '''
+        for m in measures:
+               meastemp=m+"_temp"
+               measoff=m+"_offset"
+               meastart=m+"_start"
+        '''
+        temp_df=pd.DataFrame()
+        for r in regs:
+            #offset=0
+            temp_dfs_1=[]
+            dfs=dict_slices[r]#[[measures]]
+            for x in range(len(dfs)):
+                temp_df=dfs[x][measures]
+                
+                
+                #print(f"VVV ",r,x)
+                #calculate offset of each measure in measures
+                for m in measures:
+                    meastemp=m+"_temp"
+                    measoff=m+"_offset"
+                    meastart=m+"_start"
+                    if x==0:
+                        offset=0
+                        start=dfs[x][m].iloc[0]
+                        start1=dfs[x][m].iloc[0]
+                    
+                        
+                    else:
+                        prev=temp_dfs_1[x-1]
+                        offset=prev[meastemp].iloc[-1]
+                        start1=dfs[x][m].iloc[0]
+                        
+                    print(f"For measure {m}, region {r} and index={x} : start={start}, offset={offset}")
+                    temp_df[meastart]=start
+                    temp_df[measoff]=offset
+                    temp_df[meastemp]=dfs[x][m]
+                    #temp_df['counter'] = np.arange(len(temp_df))
+                    #temp_df['data']=dfs[x]['data']
+                    temp_dfs_1.append(temp_df)
+                #print("XXX ",measures,r,x)
+                #print(temp_df)#[['tamponi','tamponi_start','tamponi_offset', 'totale_casi','totale_casi_start','totale_casi_offset']])
+                
+               
+               
+      
         
     def plotsliceddata(self, r, df, first,last, switch, savefile):
         df_perc=pd.DataFrame()
