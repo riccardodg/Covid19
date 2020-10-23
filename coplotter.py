@@ -186,7 +186,9 @@ class Plotter(object):
     def plotbehaves(self, regs, dict_slices, fs, ls, switch, savefile):
         routine = classname + ": " + "plotbehaves"
         dict_to_plot={}
-        standards = ["deceduti", "terapia_intensiva"]
+        colors=self.get_colors()
+        standards = ["deceduti", "terapia_intensiva","totale_positivi"]
+        #standards = ["tamponi", "totale_positivi"]
         #"dimessi_guariti", "deceduti", "totale_casi",
         #"ricoverati_con_sintomi" ,
         #"terapia_intensiva",
@@ -194,12 +196,14 @@ class Plotter(object):
         #"isolamento_domiciliare"]
         
         key=''
+        len_m=len(standards)
+        len_r=len(regs)
         if self.verbose:
             print(f"\t\tRoutine {routine}. Plotting data for {regs} with a dictionary of slices of length {len(dict_slices)} and plot_type {self.plot_type}. Slices created from {self.inc} "
                    )
         
         for m in standards:
-            meastoplot=m+"_shifted"
+            meastemp=m+"_temp"
             
             #offset=0
             for r in regs:
@@ -211,7 +215,7 @@ class Plotter(object):
                     
                     d0=dfs[x]['data'].iloc[0]
                     d1=dfs[x]['data'].iloc[-1]
-                    key=r+"-"+meastoplot+"-"+str(d0)+"-"+str(d1)
+                    #key=r+"-"+meastoplot+"-"+str(d0)+"-"+str(d1)
                     #key=r+"-"+m+"-"+str(fs[x])+"-"+str(ls[x])
                     offset=0
                     #start=0
@@ -228,61 +232,38 @@ class Plotter(object):
                         
                     else:
                         prev=temp_dfs[i-1]
-                        offset=prev[m].iloc[-1]
+                        offset=prev[meastemp].iloc[-1]
                         start1=dfs[x][m].iloc[0]
                         
                     
-                    temp_df[m]=dfs[x][m]
+                    temp_df[meastemp]=dfs[x][m]
                     
                     temp_df['offset']=offset
                     temp_df['start']=start
                     value=start-(start1-offset)
                     
                     temp_df['x']=value
-                    temp_df[meastoplot]=temp_df[m]-temp_df['offset']+value
+                    temp_df[m]=temp_df[meastemp]-temp_df['offset']+value
                     temp_df['counter'] = np.arange(len(temp_df))
                     temp_df['data']=dfs[x]['data']
                     temp_dfs.append(temp_df)
                     #print(i,key, temp_df)
                
                     #print(i,r, temp_df)
-                    dict_to_plot[meastoplot+"-"+r]=temp_dfs
+                    dict_to_plot[m+"-"+r]=temp_dfs
                     i=i+1
+ 
+        
+        f, axes = plt.subplots(len_r,len_m,figsize=(20,8))
+        f.tight_layout(pad=3.0)
     
         
-        #f, ax = plt.subplots(1,1,figsize=(20,8))
-        
-        colors=self.get_colors()
-        
-        
-        len_m=len(dict_to_plot)
-        f, axes = plt.subplots(1,len_m,figsize=(20,8))
-        f.tight_layout(pad=3.0)
-        #title=f"Increments % for {r.title()} from {df['data'][first]} to {df['data'][last]}"
-        
-         
-        '''
-        for m in measures:
-            title=f"Incremental % of {m} for {r.title()}\nfrom {df['data'][first]} to {df['data'][last]}"
-            axes[measures.index(m)].set_title(title)
-            axes[measures.index(m)].set_ylabel(f'% of increments for {m}')
-            axes[measures.index(m)].plot(df['data'], df[m],  alpha=0.7, linewidth=2, label=m)
-            axes[measures.index(m)].set_xlabel('Dates')
-            axes[measures.index(m)].yaxis.set_tick_params(length=0)
-            axes[measures.index(m)].xaxis.set_tick_params(length=0)
-            #axes[measures.index(m)].set_xticks(rotation='vertical')
-            axes[measures.index(m)].set_xticklabels([], rotation='vertical')
-            axes[measures.index(m)].grid(b=True, which='major', c='w', lw=2, ls='-')
-            legend = axes[measures.index(m)].legend()
-            legend.get_frame().set_alpha(0.5)
-        '''
-        j=0
         for k,dfs in dict_to_plot.items():
             m=k.split("-")[0]
             r=k.split("-")[1]
             print(m,k)
             
-            print("THE DICT ",k,len(dfs), len(dict_to_plot),j)
+            #print("THE DICT ",k,len(dfs), len(dict_to_plot),j)
             
             for t in range(len(dfs)):
                 df=dfs[t]
@@ -290,17 +271,17 @@ class Plotter(object):
                 d0=df['data'].iloc[0]
                 d1=df['data'].iloc[-1]
                 title=f"Data (shifted) {m} \nfor {r.title()} "
-                axes[j].set_title(title)
-                axes[j].set_ylabel('# of occurrences ')
+                axes[regs.index(r),standards.index(m)].set_title(title)
+                axes[regs.index(r),standards.index(m)].set_ylabel('# of occurrences ')
             
-                axes[j].plot(df['counter'],df[m],  alpha=0.7, linewidth=2, label=" From "+d0 +" To " +d1)
-                legend = axes[j].legend()
+                axes[regs.index(r),standards.index(m)].plot(df['counter'],df[m],  alpha=0.7, linewidth=2, label=" From "+d0 +" To " +d1)
+                legend = axes[regs.index(r),standards.index(m)].legend()
                 legend.get_frame().set_alpha(0.5)
-                axes[j].grid(b=True, which='major', c='w', lw=2, ls='-')
+                axes[regs.index(r),standards.index(m)].grid(b=True, which='major', c='w', lw=2, ls='-')
             for spine in ('top', 'right', 'bottom', 'left'):
                 for ax in axes:
-                    axes[j].spines[spine].set_visible(True)
-            j=j+1
+                    axes[regs.index(r),standards.index(m)].spines[spine].set_visible(True)
+            
         plt.show()
             
         
