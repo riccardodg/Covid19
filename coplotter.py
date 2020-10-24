@@ -4,6 +4,10 @@ import os
 import numpy as np
 
 import covars as covars
+import itertools
+import sys
+
+
 
 
 import matplotlib.pyplot as plt
@@ -293,60 +297,138 @@ class Plotter(object):
         routine = classname + ": " + "plotcorr"
         dict_to_plot={}
         colors=self.get_colors()
-        measures = ["tamponi", "totale_casi"]#,"totale_positivi"]
-        corr_m=["tamponi-totale_casi","tamponi-totale_positivi","totale_casi-totale_positivi"]
-        
+        start=0
+        start1=0
+        offset=0
+        measures = ["deceduti", "totale_positivi"]#,"totale_positivi"]
+        corr_m=[]#"tamponi-totale_casi","tamponi-totale_positivi","totale_casi-totale_positivi"]
+        #print("XXXX ",len(measures))
+        if len(measures)>2:
+            for x in set(itertools.combinations(measures,2)):
+                t=x[0]+"-"+x[1]
+                corr_m.append(t)
+            
+        elif len(measures)==2:
+            corr_m.append(measures[0]+"-"+measures[1])
+        else:
+            sys.exit(-1)
+        print(len(corr_m),corr_m)
         len_m=len(corr_m)
         len_r=len(regs)
         if self.verbose:
             print(f"\t\tRoutine {routine}. Plotting data for {regs} with a dictionary of slices of length {len(dict_slices)} and plot_type {self.plot_type}. Slices created from {self.inc} "
                       )
            
-        '''
-        for m in measures:
-               meastemp=m+"_temp"
-               measoff=m+"_offset"
-               meastart=m+"_start"
-        '''
-        temp_df=pd.DataFrame()
-        for r in regs:
-            #offset=0
-            temp_dfs_1=[]
-            dfs=dict_slices[r]#[[measures]]
+        #another dict
+        temp_dict_dfs={}
+        
+        
+        
+        #loop over the main dictionary
+        for r,dfs in dict_slices.items():
+            i=0
+            print(f"*** r ={r} *** {len(dfs)}")
+            
+            temp_dfs=[]
+            start_dict={}
+            start1_dict={}
+            offset_dict={}
+            #print(dfs)
+            #loop over every single slice
             for x in range(len(dfs)):
-                temp_df=dfs[x][measures]
+                temp_df=pd.DataFrame()
+                #loop over each measure
                 
                 
-                #print(f"VVV ",r,x)
-                #calculate offset of each measure in measures
                 for m in measures:
                     meastemp=m+"_temp"
                     measoff=m+"_offset"
                     meastart=m+"_start"
+                    
+                    #calculate start and offset
                     if x==0:
                         offset=0
                         start=dfs[x][m].iloc[0]
                         start1=dfs[x][m].iloc[0]
-                    
+                        start_dict[m]=start
+                        start1_dict[m]=start1
+                        offset_dict[m]=offset
                         
                     else:
-                        prev=temp_dfs_1[x-1]
+                        prev=temp_dfs[x-1]
                         offset=prev[meastemp].iloc[-1]
                         start1=dfs[x][m].iloc[0]
-                        
-                    print(f"For measure {m}, region {r} and index={x} : start={start}, offset={offset}")
-                    temp_df[meastart]=start
-                    temp_df[measoff]=offset
+                        offset_dict[m]=offset
+                        start1_dict[m]=start1
+                    
+                    
                     temp_df[meastemp]=dfs[x][m]
-                    #temp_df['counter'] = np.arange(len(temp_df))
-                    #temp_df['data']=dfs[x]['data']
-                    temp_dfs_1.append(temp_df)
-                #print("XXX ",measures,r,x)
-                #print(temp_df)#[['tamponi','tamponi_start','tamponi_offset', 'totale_casi','totale_casi_start','totale_casi_offset']])
+                    temp_df[meastart]=start_dict[m]
+                    temp_df[measoff]=offset_dict[m]#offset
+                    value=start_dict[m]-(start1_dict[m]-offset_dict[m])
+                    
+                    temp_df['x']=value
+                    temp_df[m]=temp_df[meastemp]-temp_df[measoff]+value
+                    temp_df['data']=dfs[x]['data']
+                    
+                    #print(temp_df)
+                    #print(f"For measure {m} and region {r} and index {x}, {i}. Start {start_dict[m]}, Offset {offset_dict[m]}, value={value}")
+                    i=i+1
+                temp_dfs.append(temp_df)
+                    
+            temp_dict_dfs[r]=temp_dfs
                 
-               
-               
-      
+            
+        #check dataframes and plot
+       
+        f, axes = plt.subplots(len_r,len_m,figsize=(20,10))
+        f.tight_layout(pad=5.0)
+        
+        for r,dfs in temp_dict_dfs.items():
+            
+            for couple in corr_m:
+                mx=couple.split("-")[0]
+                my=couple.split("-")[1]
+                #print("VVVV ",corr_m,mx,my,couple,corr_m.index(couple))
+                
+                for t in range(len(dfs)):
+                    df=dfs[t]
+                    #print(mx,my,df)
+                    d0=df['data'].iloc[0]
+                    d1=df['data'].iloc[-1]
+                    title=f"Correlation {couple} at {self.inc} days \nfor {r.title()})"#. Dates {d0} - {d1}"
+                    if len_m>1:
+                        axes[regs.index(r),corr_m.index(couple)].set_title(title)
+                        axes[regs.index(r),corr_m.index(couple)].set_ylabel('# of occurrences of '+my)
+                        axes[regs.index(r),corr_m.index(couple)].set_xlabel('# of occurrences of '+mx)
+                                
+                        axes[regs.index(r),corr_m.index(couple)].plot(df[mx],df[my],  alpha=0.7, linewidth=2, label=" From "+d0 +" To " +d1)
+                        legend = axes[regs.index(r),corr_m.index(couple)].legend()
+                        legend.get_frame().set_alpha(0.5)
+                        axes[regs.index(r),corr_m.index(couple)].grid(b=True, which='major', c='w', lw=2, ls='-')
+                    else:
+                        axes[regs.index(r)].set_title(title)
+                        axes[regs.index(r)].set_ylabel('# of occurrences of '+my)
+                        axes[regs.index(r)].set_xlabel('# of occurrences of '+mx)
+                                
+                        axes[regs.index(r)].plot(df[mx],df[my],  alpha=0.7, linewidth=2, label=" From "+d0 +" To " +d1)
+                        legend = axes[regs.index(r)].legend()
+                        legend.get_frame().set_alpha(0.5)
+                        axes[regs.index(r)].grid(b=True, which='major', c='w', lw=2, ls='-')
+                        
+            if len_m>1:
+                for spine in ('top', 'right', 'bottom', 'left'):
+                    for ax in axes:
+                        axes[regs.index(r),corr_m.index(couple)].spines[spine].set_visible(True)
+                        
+            else:
+                for spine in ('top', 'right', 'bottom', 'left'):
+                    for ax in axes:
+                        axes[regs.index(r)].spines[spine].set_visible(True)
+                    
+        plt.show()
+                
+            
         
     def plotsliceddata(self, r, df, first,last, switch, savefile):
         df_perc=pd.DataFrame()
