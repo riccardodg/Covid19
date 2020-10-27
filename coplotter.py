@@ -196,7 +196,7 @@ class Plotter(object):
         routine = classname + ": " + "plotbehaves"
         dict_to_plot={}
         colors=self.get_colors()
-        standards = ["deceduti", "terapia_intensiva","totale_positivi"]
+        standards = ["deceduti", "totale_positivi"]
         #standards = ["tamponi", "totale_positivi"]
         #"dimessi_guariti", "deceduti", "totale_casi",
         #"ricoverati_con_sintomi" ,
@@ -252,7 +252,7 @@ class Plotter(object):
                     value=start-(start1-offset)
                     
                     temp_df['x']=value
-                    temp_df[m]=temp_df[meastemp]-temp_df['offset']+value
+                    temp_df[m]=(temp_df[meastemp]-temp_df['offset']+value)#/dfs[x]['tamponi']
                     temp_df['counter'] = np.arange(len(temp_df))
                     temp_df['data']=dfs[x]['data']
                     temp_dfs.append(temp_df)
@@ -300,7 +300,7 @@ class Plotter(object):
         start=0
         start1=0
         offset=0
-        measures = ["deceduti", "totale_positivi"]#,"totale_positivi"]
+        measures = ["tamponi","totale_positivi"]#,"tamponi"]#,"deceduti"]#,"totale_positivi"]
         corr_m=[]#"tamponi-totale_casi","tamponi-totale_positivi","totale_casi-totale_positivi"]
         #print("XXXX ",len(measures))
         if len(measures)>2:
